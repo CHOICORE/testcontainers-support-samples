@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+@Deprecated(forRemoval = true)
 final class ContainerTestContextCustomizerFactory implements ContextCustomizerFactory {
     private static final Logger log = LoggerFactory.getLogger(ContainerTestContextCustomizerFactory.class);
 
@@ -25,15 +26,17 @@ final class ContainerTestContextCustomizerFactory implements ContextCustomizerFa
             @Nonnull List<ContextConfigurationAttributes> configAttributes
     ) {
         ContainerTest annotation = testClass.getAnnotation(ContainerTest.class);
-        if (annotation != null) {
-            log.debug("Found @ContainerTest annotation on test class: {}", testClass.getSimpleName());
-            return new ContainerTestContextCustomizer(annotation);
+        if (annotation == null) {
+            return null;
         }
 
-        return null;
+        log.info("Found @ContainerTest on {} with containers {}",
+                testClass.getName(), Arrays.toString(annotation.containers()));
+
+        return new ContainerTestContextCustomizer(annotation);
     }
 
-    private static final class ContainerTestContextCustomizer implements ContextCustomizer {
+    static final class ContainerTestContextCustomizer implements ContextCustomizer {
         private static final Logger log = LoggerFactory.getLogger(ContainerTestContextCustomizer.class);
 
         private final ContainerTest annotation;
@@ -44,38 +47,34 @@ final class ContainerTestContextCustomizerFactory implements ContextCustomizerFa
 
         @Override
         public void customizeContext(
-                ConfigurableApplicationContext context,
-                MergedContextConfiguration mergedConfig
+                @Nonnull ConfigurableApplicationContext context,
+                @Nonnull MergedContextConfiguration mergedConfig
         ) {
             String testClass = mergedConfig.getTestClass().getSimpleName();
-            log.info("[{}] Starting Testcontainers configuration", testClass);
-
-            ContainerType[] containers = annotation.containers();
-            if (containers.length == 0) {
-                containers = ContainerType.values();
-                log.info("[{}] Using all available containers: {}",
-                        testClass, Arrays.toString(containers));
-            } else {
-                log.info("[{}] Using specified containers: {}",
-                        testClass, Arrays.toString(containers));
-            }
+            log.info("Customizing context for test class [{}]", testClass);
 
             BeanDefinitionRegistry registry = (BeanDefinitionRegistry) context;
             AnnotatedBeanDefinitionReader reader = new AnnotatedBeanDefinitionReader(registry);
 
-            for (ContainerType container : containers) {
-                Class<?> configClass = switch (container) {
-                    case MARIADB -> TestcontainersConfiguration.MariaDB.class;
-                    case REDIS -> TestcontainersConfiguration.Redis.class;
-                };
+            ContainerType[] containers = annotation.containers();
+            if (containers.length == 0) {
+                containers = ContainerType.values();
+                log.info("No containers specified, using all available containers: {}", Arrays.toString(containers));
+            } else {
+                log.info("Found specified containers, using containers: {}", Arrays.toString(containers));
+                for (ContainerType container : containers) {
+                    Class<?> configClass = switch (container) {
+                        case MARIADB -> TestcontainersConfiguration.MariaDB.class;
+                        case REDIS -> TestcontainersConfiguration.Redis.class;
+                    };
 
-                log.debug("[{}] Registering configuration: {}",
-                        testClass, configClass.getSimpleName());
-
-                reader.register(configClass);
+                    log.trace("Registering configuration {} for {}",
+                            configClass.getSimpleName(), testClass);
+                    reader.register(configClass);
+                }
             }
 
-            log.info("[{}] Testcontainers configuration completed", testClass);
+            log.info("Completed context customization for test class [{}]", testClass);
         }
 
         @Override

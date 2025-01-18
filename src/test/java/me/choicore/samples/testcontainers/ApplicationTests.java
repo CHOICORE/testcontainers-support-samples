@@ -1,11 +1,11 @@
 package me.choicore.samples.testcontainers;
 
-import me.choicore.samples.testcontainers.support.ContainerTest;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 
-//@Import(TestcontainersConfiguration.class)
-//@SpringBootTest
-@ContainerTest
+@Import(TestcontainersConfiguration.class)
+@SpringBootTest
 class ApplicationTests {
 
     @Test
