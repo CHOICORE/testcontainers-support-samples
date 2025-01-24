@@ -19,4 +19,19 @@ public @interface ContainerTest {
 
     @AliasFor("value")
     ContainerType[] containers() default {};
+
+    @AliasFor(annotation = SpringBootTest.class, attribute = "webEnvironment")
+    SpringBootTest.WebEnvironment webEnvironment() default SpringBootTest.WebEnvironment.MOCK;
+
+    @AliasFor(annotation = SpringBootTest.class, attribute = "properties")
+    String[] properties() default {};
+
+    @AliasFor(annotation = SpringBootTest.class, attribute = "args")
+    String[] args() default {};
+
+    @AliasFor(annotation = SpringBootTest.class, attribute = "classes")
+    Class<?>[] classes() default {};
+
+    @AliasFor(annotation = SpringBootTest.class, attribute = "useMainMethod")
+    SpringBootTest.UseMainMethod useMainMethod() default SpringBootTest.UseMainMethod.NEVER;
 }
