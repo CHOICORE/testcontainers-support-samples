@@ -14,10 +14,12 @@ import org.testcontainers.utility.DockerImageName;
 public class TestcontainersConfiguration {
     @TestConfiguration(proxyBeanMethods = false)
     public static class MariaDB {
+        static final MariaDBContainer<?> MARIA_DB_CONTAINER = new MariaDBContainer<>(DockerImageName.parse("mariadb:latest"));
+
         @Bean
         @ServiceConnection
         MariaDBContainer<?> mariaDbContainer() {
-            return new MariaDBContainer<>(DockerImageName.parse("mariadb:latest"));
+            return MARIA_DB_CONTAINER;
         }
 
         @Bean
@@ -38,11 +40,13 @@ public class TestcontainersConfiguration {
 
     @TestConfiguration(proxyBeanMethods = false)
     public static class Redis {
+        public static final GenericContainer<?> REDIS_CONTAINER = new GenericContainer<>(DockerImageName.parse("redis:latest"))
+                .withExposedPorts(6379);
+
         @Bean
         @ServiceConnection(name = "redis")
         GenericContainer<?> redisContainer() {
-            return new GenericContainer<>(DockerImageName.parse("redis:latest"))
-                    .withExposedPorts(6379);
+            return REDIS_CONTAINER;
         }
 
         @Bean
@@ -50,7 +54,6 @@ public class TestcontainersConfiguration {
                 @Nonnull final @Qualifier("redisContainer") GenericContainer<?> redisContainer
         ) {
             return registry -> {
-
                 // example of adding dynamic properties
                 registry.add("spring.data.redis.host", redisContainer::getHost);
                 registry.add("spring.data.redis.port", redisContainer::getFirstMappedPort);
